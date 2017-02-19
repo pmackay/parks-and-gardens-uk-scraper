@@ -15,11 +15,16 @@ class ParksSpider < Spidey::AbstractSpider
   end
 
   def parse_list(page, default_data = {})
-    page.search('.sites-list a').each do |park_link|
-      path = park_link.attribute('href').value
-      name = park_link.text
-      id = path.split('/').last
-      record name: name, url: HOST + path, id: id
+    page.search('.sites-list li').each do |entry|
+      link = entry.search('a')
+      path = link.attribute('href').value
+      name = link.text
+      id = path[/\/(\d+)/, 1]
+
+      description = entry.search('.description').text.strip
+      data = { id: id, name: name, description: description, url: HOST + path }
+      # p data
+      record data
     end
 
     next_link = agent.page.link_with(text: 'next')
@@ -27,6 +32,7 @@ class ParksSpider < Spidey::AbstractSpider
   end
 end
 
+Spidey.logger.level = Logger::WARN
 spider = ParksSpider.new
 spider.crawl # max_urls: 10
 
